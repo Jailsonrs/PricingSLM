@@ -10,3 +10,8 @@ wheels/
 .venv
 venv/
 .venv/
+
+
+## CSV
+*.csv
+.csv
