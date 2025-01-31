@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Análise de Preços{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card shadow-lg p-4">
+        <!-- Card Header -->
+        <div class="card-header">
+            <h2><i class="bi bi-bar-chart-line"></i> Análise de Elasticidade e Preços</h2>
+            <span class="badge bg-primary">{{ results_df|length }} produtos</span>
+        </div>
+        <div class="card-body">
+            
+            <!-- Filtros -->
+            <div class="filters d-flex flex-wrap gap-3 mb-3">
+                <input type="text" id="searchInput" placeholder="Pesquisar produto..." class="form-control w-auto">
+                <select id="elasticityFilter" class="form-select w-auto">
+                    <option value="">Todas Elasticidades</option>
+                    <option value="elastico">Elástico (|PED| > 1)</option>
+                    <option value="inelastico">Inelástico (|PED| < 1)</option>
+                </select>
+            </div>
+
+            <!-- Tabela -->
+            <div class="table-responsive">
+                <table id="pricingTable" class="table table-striped table-hover w-100">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>PRODUTO</th>
+                            <th>ELASTICIDADE ▼▲</th>
+                            <th>PREÇO ÓTIMO ▼▲</th>
+                            <th>PREÇO ATUAL ▼▲</th>
+                            <th>BETA PREÇO ▼▲</th>
+                            <th>AÇÃO SUGERIDA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for index, row in results_df.iterrows() %}
+                        <tr>
+                            <td>{{ row['PRODUTO'] }}</td>
+                            <td class="elasticidade {{ 'elastico' if abs(row['ELASTICIDADE']) > 1 else 'inelastico' }}">
+                                {{ "%.2f"|format(row['ELASTICIDADE']) }}
+                            </td>
+                            <td>R$ {{ "%.2f"|format(row['PRECO_OTIMO']) }}</td>
+                            <td class="{{ 'above-optimal' if row['PRECO_ATUAL'] > row['PRECO_OTIMO'] else 'below-optimal' }}">
+                                R$ {{ "%.2f"|format(row['PRECO_ATUAL']) }}
+                            </td>
+                            <td>{{ "%.2f"|format(row['BETA_PRECO']) }}</td>
+                            <td>
+                                {% if abs(row['ELASTICIDADE']) > 1 %}
+                                    {% if row['PRECO_ATUAL'] > row['PRECO_OTIMO'] %}
+                                        <span class="badge bg-danger">Reduzir Preço</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Manter/Monitorar</span>
+                                    {% endif %}
+                                {% else %}
+                                    {% if row['PRECO_ATUAL'] < row['PRECO_OTIMO'] %}
+                                        <span class="badge bg-success">Aumentar Preço</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Estável</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Controles de Exportação -->
+            <div class="export-buttons d-flex gap-2 mt-3">
+                <button class="btn btn-outline-primary" onclick="exportToExcel()">
+                    <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+                </button>
+                <button class="btn btn-outline-danger" onclick="exportToPDF()">
+                    <i class="bi bi-file-pdf"></i> Exportar PDF
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css">
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    var table = $('#pricingTable').DataTable({
+        dom: 'Bfrtip',
+        responsive: true,
+        pageLength: 30,
+        lengthMenu: [10, 25, 50, 100],
+        order: [[1, 'desc']],
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json'
+        },
+        buttons: [
+            {
+                extend: 'excelHtml5',
+                text: '<i class="bi bi-file-earmark-excel"></i> Excel',
+                className: 'btn-outline-primary'
+            },
+            {
+                extend: 'pdfHtml5',
+                text: '<i class="bi bi-file-pdf"></i> PDF',
+                className: 'btn-outline-danger'
+            }
+        ]
+    });
+
+    $('#elasticityFilter').on('change', function() {
+        table.column(1).search($(this).val()).draw();
+    });
+
+    $('#searchInput').on('keyup', function() {
+        table.search(this.value).draw();
+    });
+});
+
+function exportToExcel() {
+    $('.buttons-excel').click();
+}
+
+function exportToPDF() {
+    $('.buttons-pdf').click();
+}
+</script>
+
+<style>
+.container-fluid { padding: 20px; }
+.card { border-radius: 12px; background: #fff; }
+.card-header {
+    padding: 1.5rem 2rem;
+    background: #4a90e2;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid rgba(0,0,0,0.1);
+}
+.table-responsive { overflow-x: auto; }
+.table { width: 100% !important; }
+.above-optimal { color: #dc3545; font-weight: bold; }
+.below-optimal { color: #28a745; font-weight: bold; }
+.elastico { background-color: #fff3cd; }
+.inelastico { background-color: #d4edda; }
+.filters { display: flex; flex-wrap: wrap; gap: 10px; }
+.export-buttons { display: flex; gap: 10px; }
+</style>
+{% endblock %}

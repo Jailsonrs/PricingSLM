@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Análise de Preços{% endblock %}
+
+{% block content %}
+<div class="card-container">
+    <div class="pricing-card">
+        <!-- Card Header -->
+        <div class="card-header">
+            <h2><i class="bi bi-bar-chart-line"></i> Análise de Elasticidade e Preços</h2>
+            <span class="badge bg-primary">{{ results_df|length }} produtos</span>
+        </div>
+
+        <!-- Card Body -->
+        <div class="card-body">
+            <!-- Filtros -->
+            <div class="filters">
+                <div class="search-wrapper">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="searchInput" placeholder="Pesquisar produto..." class="form-control">
+                </div>
+                <select id="elasticityFilter" class="form-select">
+                    <option value="">📊 Todas Elasticidades</option>
+                    <option value="elastico">🚀 Elástico (|PED| > 1)</option>
+                    <option value="inelastico">🛡️ Inelástico (|PED| < 1)</option>
+                </select>
+            </div>
+<tbody>
+            {% for index, row in results_df.iterrows() %}
+            <tr>
+                <td>{{ row['PRODUTO'] }}</td>
+                <td class="elasticidade {{ 'elastico' if abs(row['ELASTICIDADE']) > 1 else 'inelastico' }}">
+                    {{ "%.2f"|format(row['ELASTICIDADE']) }}
+                </td>
+                <td>R$ {{ "%.2f"|format(row['PRECO_OTIMO']) }}</td>
+                <td class="{{ 'above-optimal' if row['PRECO_ATUAL'] > row['PRECO_OTIMO'] else 'below-optimal' }}">
+                    R$ {{ "%.2f"|format(row['PRECO_ATUAL']) }}
+                </td>
+                <td>{{ "%.2f"|format(row['BETA_PRECO']) }}</td>
+                <td>
+                    {% if abs(row['ELASTICIDADE']) > 1 %}
+                        {% if row['PRECO_ATUAL'] > row['PRECO_OTIMO'] %}
+                            <span class="badge bg-danger">Reduzir Preço</span>
+                        {% else %}
+                            <span class="badge bg-warning">Manter/Monitorar</span>
+                        {% endif %}
+                    {% else %}
+                        {% if row['PRECO_ATUAL'] < row['PRECO_OTIMO'] %}
+                            <span class="badge bg-success">Aumentar Preço</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Estável</span>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+            <!-- Tabela -->
+            <div class="table-responsive">
+                <table id="pricingTable" class="table table-hover align-middle">
+                    <!-- Conteúdo da tabela mantido igual -->
+                    <thead class="table-primary">
+                        <tr>
+                            <th data-orderable="true">PRODUTO</th>
+                            <th data-orderable="true">ELASTICIDADE ▼▲</th>
+                            <th data-orderable="true">PREÇO ÓTIMO ▼▲</th>
+                            <th data-orderable="true">PREÇO ATUAL ▼▲</th>
+                            <th data-orderable="true">BETA PREÇO ▼▲</th>
+                            <th>AÇÃO SUGERIDA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for index, row in results_df.iterrows() %}
+            <tr>
+                <td>{{ row['PRODUTO'] }}</td>
+                <td class="elasticidade {{ 'elastico' if abs(row['ELASTICIDADE']) > 1 else 'inelastico' }}">
+                    {{ "%.2f"|format(row['ELASTICIDADE']) }}
+                </td>
+                <td>R$ {{ "%.2f"|format(row['PRECO_OTIMO']) }}</td>
+                <td class="{{ 'above-optimal' if row['PRECO_ATUAL'] > row['PRECO_OTIMO'] else 'below-optimal' }}">
+                    R$ {{ "%.2f"|format(row['PRECO_ATUAL']) }}
+                </td>
+                <td>{{ "%.2f"|format(row['BETA_PRECO']) }}</td>
+                <td>
+                    {% if abs(row['ELASTICIDADE']) > 1 %}
+                        {% if row['PRECO_ATUAL'] > row['PRECO_OTIMO'] %}
+                            <span class="badge bg-danger">Reduzir Preço</span>
+                        {% else %}
+                            <span class="badge bg-warning">Manter/Monitorar</span>
+                        {% endif %}
+                    {% else %}
+                        {% if row['PRECO_ATUAL'] < row['PRECO_OTIMO'] %}
+                            <span class="badge bg-success">Aumentar Preço</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Estável</span>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Card Footer -->
+            <div class="card-footer">
+                <div class="export-buttons">
+                    <button class="btn btn-export excel" onclick="exportToExcel()">
+                        <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+                    </button>
+                    <button class="btn btn-export pdf" onclick="exportToPDF()">
+                        <i class="bi bi-file-pdf"></i> Exportar PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Adicione estes estilos -->
+<style>
+.card-container {
+    padding: 2rem;
+    background: #f8f9fa;
+    min-height: 100vh;
+}
+
+.pricing-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 1.5rem 2rem;
+    background: #4a90e2;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid rgba(0,0,0,0.1);
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+.filters {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.search-wrapper {
+    flex: 1;
+    position: relative;
+}
+
+.search-wrapper i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+}
+
+#searchInput {
+    padding-left: 2.5rem;
+    border-radius: 8px;
+}
+
+.table-responsive {
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table {
+    margin: 0;
+    border-collapse: collapse;
+}
+
+.table thead th {
+    background: #f8f9fa !important;
+    color: #212529 !important;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8fafc !important;
+}
+
+.card-footer {
+    padding: 1.5rem 0 0 0;
+    margin-top: 1.5rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.btn-export {
+    border: none;
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-export.excel {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.btn-export.pdf {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.btn-export:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Mantenha os estilos originais abaixo */
+.above-optimal { color: #dc3545; font-weight: bold; }
+.below-optimal { color: #28a745; font-weight: bold; }
+.elastico { background-color: #fff3cd; }
+.inelastico { background-color: #d4edda; }
+</style>
+
+<!-- Scripts mantidos iguais -->
+{% endblock %}

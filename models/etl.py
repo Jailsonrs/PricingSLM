@@ -18,10 +18,11 @@ df.info()
 #modelar.
 #modelar.
 
-train_cols = ['PRODUTO',"CLASSE TERAPÊUTICA","LABORATÓRIO","TARJA","PMC Sem Imposto","PMC 0%","PMC 12%","PMC 18%","PMC 21%","PMC 22%"]
+train_cols = ['PRODUTO',"CLASSE TERAPÊUTICA","LABORATÓRIO","APRESENTAÇÃO","TARJA","PF Sem Impostos","PMC 0%","PMC 12%","PMC 18%","PMC 21%","PMC 22%"]
+
 
 df_train = df[train_cols]
-
+df_train['PROD_KEY'] = df_train['PRODUTO']+df_train['APRESENTAÇÃO']
 
 df_train.dropna(inplace=True)
 #print(df_train.isna().sum())
