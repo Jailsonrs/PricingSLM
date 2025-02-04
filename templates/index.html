@@ -3,5 +3,70 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-    <p>Use the sidebar to navigate through different sections of the app.</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask Table with Filters</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+</head>
+<body>
+
+     <!-- Tabela -->
+     <div class="table-responsive">
+        <table id="myTable" class="display w-100">
+            <thead >
+                <tr>
+                    <th>PRODUTO</th>
+                    <th>ELASTICIDADE ▼▲</th>
+                    <th>PREÇO ÓTIMO ▼▲</th>
+                    <th>PREÇO ATUAL ▼▲</th>
+                    <th>BETA PREÇO ▼▲</th>
+                    <th>AÇÃO SUGERIDA</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for index, row in results_df.iterrows() %}
+                <tr>
+                    <td>{{ row['PRODUTO'] }}</td>
+                    <td class="elasticidade {{ 'elastico' if abs(row['ELASTICIDADE']) > 1 else 'inelastico' }}">
+                        {{ "%.2f"|format(row['ELASTICIDADE']) }}
+                    </td>
+                    <td>R$ {{ "%.2f"|format(row['PRECO_OTIMO']) }}</td>
+                    <td class="{{ 'above-optimal' if row['PRECO_ATUAL'] > row['PRECO_OTIMO'] else 'below-optimal' }}">
+                        R$ {{ "%.2f"|format(row['PRECO_ATUAL']) }}
+                    </td>
+                    <td>{{ "%.2f"|format(row['BETA_PRECO']) }}</td>
+                    <td>
+                        {% if abs(row['ELASTICIDADE']) > 1 %}
+                            {% if row['PRECO_ATUAL'] > row['PRECO_OTIMO'] %}
+                                <span class="badge bg-danger">Reduzir Preço</span>
+                            {% else %}
+                                <span class="badge bg-warning">Manter/Monitorar</span>
+                            {% endif %}
+                        {% else %}
+                            {% if row['PRECO_ATUAL'] < row['PRECO_OTIMO'] %}
+                                <span class="badge bg-success">Aumentar Preço</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Estável</span>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+
+    <script>
+        $(document).ready(function () {
+            $('#myTable').DataTable();
+        });
+    </script>
+
+</body>
+</html>
+
 {% endblock %}

@@ -3,9 +3,12 @@ import pandas as pd
 
 app = Flask(__name__)
 app.jinja_env.globals["abs"] = abs  # Adiciona a função abs ao Jinja
+
 @app.route('/')
 def home():
-    return render_template("index.html")
+    results_df = pd.read_csv("DATA/processed/elasticity_optimal_price.csv")
+    return render_template('index.html', results_df=results_df)
+
 
 @app.route('/about')
 def about   ():
