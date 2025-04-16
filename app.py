@@ -26,4 +26,6 @@ def precos():
 
 
 if __name__ == "__main__":
-    app.run()
+    print(__name__) 
+    print("oi")
+    app.run(debug=True)

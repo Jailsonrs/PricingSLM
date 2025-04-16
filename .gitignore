@@ -15,3 +15,4 @@ venv/
 ## CSV
 *.csv
 .csv
+.qodo
